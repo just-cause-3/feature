@@ -1,33 +1,106 @@
 import json
 import re
+import os
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 import sys
 
 sys.stdout.reconfigure(encoding='utf-8')
+
+# 1. Map all local images in images/
+local_images = os.listdir('images')
+print(f"Total local images in images/ directory: {len(local_images)}")
+
+image_lookup = {}
+for limg in local_images:
+    image_lookup[limg.lower()] = f'images/{limg}'
+    parts = limg.split('_')
+    if len(parts) >= 4:
+        image_lookup[parts[-1].lower()] = f'images/{limg}'
+        image_lookup['_'.join(parts[3:]).lower()] = f'images/{limg}'
+    elif len(parts) >= 2:
+        image_lookup[parts[-1].lower()] = f'images/{limg}'
 
 def clean_spacing(text):
     if not text:
         return ""
     text = text.replace('Â', ' ')
-    # remove internal multiple spaces and newlines
     text = re.sub(r'[ \t]+', ' ', text)
     text = re.sub(r' ?\n ?', ' ', text)
     text = re.sub(r'\s{2,}', ' ', text)
     return text.strip()
 
-def clean_html_basics(html_str):
+def fix_images(soup, yr, slot, sec):
+    base_url = f'https://online.2iim.com/CAT-question-paper/CAT-{yr}-Question-Paper-Slot-{slot}-{sec}/'
+    
+    # Unwrap noscript so real images are in the DOM
+    for ns in list(soup.find_all('noscript')):
+        ns.unwrap()
+        
+    seen = set()
+    for img in list(soup.find_all('img')):
+        src = img.get('src') or img.get('data-src') or img.get('data-original')
+        if not src:
+            img.decompose()
+            continue
+            
+        base_name = os.path.basename(src.split('?')[0]).lower()
+        if any(x in base_name for x in ['logo', 'icon', 'loading', 'popup', 'offer', 'amazon', 'sponsor', 'touch']):
+            img.decompose()
+            continue
+            
+        norm_key = re.sub(r'^(?:20\d\d_)?(?:s[1-3]_)?(?:dilr_|quant_|varc_)?', '', base_name)
+        if norm_key in seen:
+            img.decompose()
+            continue
+        seen.add(norm_key)
+        
+        # Match local file
+        matched = None
+        exact_key = f"{yr}_s{slot}_{sec}_{base_name}".lower()
+        if exact_key in image_lookup:
+            matched = image_lookup[exact_key]
+        elif base_name in image_lookup:
+            matched = image_lookup[base_name]
+        elif norm_key in image_lookup:
+            matched = image_lookup[norm_key]
+        else:
+            for limg in local_images:
+                if limg.lower().endswith(norm_key):
+                    matched = f'images/{limg}'
+                    break
+                    
+        remote_url = urljoin(base_url, src)
+        img['src'] = matched if matched else remote_url
+        img['data-remote-src'] = remote_url
+        
+        if 'data-src' in img.attrs:
+            del img.attrs['data-src']
+        if 'width' in img.attrs and '%' in str(img.attrs['width']):
+            del img.attrs['width']
+        if 'height' in img.attrs and '%' in str(img.attrs['height']):
+            del img.attrs['height']
+            
+        classes = [c for c in img.get('class', []) if c != 'lozad'] + ['cat-img', 'img-fluid']
+        img['class'] = list(dict.fromkeys(classes))
+        img['style'] = 'max-width:100%; height:auto; display:block; margin:0.85rem auto; border-radius:8px; cursor:zoom-in;'
+
+def clean_html_basics(html_str, yr, slot, sec):
     if not html_str:
         return ""
     
     html_str = html_str.replace('Â', ' ')
     soup = BeautifulSoup(html_str, 'html.parser')
     
-    # 1. Remove comments
+    # Fix images
+    fix_images(soup, yr, slot, sec)
+    
+    # Remove comments
     from bs4 import Comment
     for c in list(soup.find_all(string=lambda t: isinstance(t, Comment))):
         c.extract()
         
-    # 2. Remove empty layout grid divs from 2IIM
+    # Remove empty layout grid divs
     for div in list(soup.find_all('div')):
         if getattr(div, 'attrs', None) is not None:
             c_list = div.attrs.get('class', [])
@@ -36,15 +109,15 @@ def clean_html_basics(html_str):
                 if not div.get_text(strip=True) and not div.find('img'):
                     div.decompose()
                     
-    # 3. Unwrap all <li> tags
+    # Unwrap all <li> tags
     for li in list(soup.find_all('li')):
         li.unwrap()
         
-    # 4. Remove empty hr or p
+    # Remove empty hr
     for hr in list(soup.find_all('hr')):
         hr.decompose()
         
-    # 5. Clean text inside p tags
+    # Clean p tags
     for p in list(soup.find_all('p')):
         inner = p.decode_contents()
         inner = re.sub(r'\s*\n\s*', ' ', inner)
@@ -60,9 +133,8 @@ def clean_html_basics(html_str):
     res = "".join(str(c) for c in soup.children).strip()
     return res
 
-def format_va_question(q_html, p_html):
-    # First clean basic html so there are no residual divs/li
-    q_clean = clean_html_basics(q_html)
+def format_va_question(q_html, p_html, yr, slot, sec):
+    q_clean = clean_html_basics(q_html, yr, slot, sec)
     full_text = f"{p_html} {q_clean}"
     
     # 1. Sentence Insertion
@@ -71,7 +143,6 @@ def format_va_question(q_html, p_html):
         if m:
             sent = clean_spacing(re.sub(r'<[^>]+>', ' ', m.group(1)))
             para_raw = m.group(2).strip()
-            # Clean para_raw from residual divs
             para_soup = BeautifulSoup(para_raw, 'html.parser')
             for div in list(para_soup.find_all('div')):
                 if not div.get_text(strip=True):
@@ -125,29 +196,32 @@ def format_va_question(q_html, p_html):
 
     return False, q_clean
 
-def clean_passage_html(html_str):
+def clean_passage_html(html_str, yr, slot, sec):
     if not html_str:
         return ""
     
     html_str = html_str.replace('Â', ' ')
     soup = BeautifulSoup(html_str, 'html.parser')
     
-    # 1. Remove comments
+    # Fix images in passage
+    fix_images(soup, yr, slot, sec)
+    
+    # Remove comments
     from bs4 import Comment
     for c in list(soup.find_all(string=lambda t: isinstance(t, Comment))):
         c.extract()
         
-    # 2. Remove redundant site header banner tags
+    # Remove redundant site header banner tags
     for h2 in list(soup.find_all('h2')):
         t = h2.get_text(strip=True).lower()
         if 'cat' in t and ('slot' in t or 'question paper' in t):
             h2.decompose()
             
-    # 3. Clean up set title (h3)
+    # Clean up set title (h3)
     for h3 in list(soup.find_all('h3')):
         h3['class'] = ['set-case-title']
         
-    # 4. Clean paragraphs
+    # Clean paragraphs
     for p in list(soup.find_all('p')):
         inner = p.decode_contents()
         inner = re.sub(r'The passage below is accompanied by a set of questions\.\s*Choose the best answer to each question\.\s*(?:<br\s*/?>)*', '', inner, flags=re.IGNORECASE)
@@ -181,10 +255,8 @@ def clean_choice_dict(c):
     c['text'] = clean_spacing(re.sub(r'<[^>]+>', ' ', clean))
     return c
 
-# Load raw parsed questions
 from parse_all_questions import extract_paper
 import glob
-import os
 
 print("Extracting fresh clean data from all raw_html files...")
 raw_files = sorted(glob.glob('raw_html/*.html'))
@@ -192,48 +264,48 @@ all_qs = []
 for f in raw_files:
     all_qs.extend(extract_paper(f))
 
-# Load explanations cache
 with open('data/explanations_cache.json', 'r', encoding='utf-8') as f:
     exp_cache = json.load(f)
 
-# Attach explanations and video links
 for q in all_qs:
     c = exp_cache.get(q['id'], {})
     q['videoUrl'] = c.get('video', '')
     q['explanationHtml'] = c.get('explanation', '')
 
-print(f"Applying enhanced formatting on all {len(all_qs)} questions...")
+print(f"Applying enhanced formatting and image fixes on all {len(all_qs)} questions...")
 va_count = 0
 for q in all_qs:
+    yr = q['year']
+    slot = q['slot']
     sec = q['section']
     
-    # Choices
     if q.get('choices'):
         for c in q['choices']:
             clean_choice_dict(c)
             
-    # VA handling
     is_va = False
     if sec == 'VARC':
-        is_va, formatted_q = format_va_question(q.get('questionHtml', ''), q.get('passageHtml', ''))
+        is_va, formatted_q = format_va_question(q.get('questionHtml', ''), q.get('passageHtml', ''), yr, slot, sec)
         if is_va:
             va_count += 1
             q['questionHtml'] = formatted_q
-            q['passageHtml'] = "" # Clear carry-over RC passage
+            q['passageHtml'] = ""
             q['hasPassage'] = False
             
     if not is_va:
-        q['questionHtml'] = clean_html_basics(q.get('questionHtml', ''))
+        q['questionHtml'] = clean_html_basics(q.get('questionHtml', ''), yr, slot, sec)
         
     if q.get('passageHtml'):
-        q['passageHtml'] = clean_passage_html(q['passageHtml'])
+        q['passageHtml'] = clean_passage_html(q['passageHtml'], yr, slot, sec)
+        
+    if q.get('explanationHtml'):
+        q['explanationHtml'] = clean_html_basics(q['explanationHtml'], yr, slot, sec)
         
     soup_text = BeautifulSoup(q['questionHtml'], 'html.parser')
     q['questionText'] = clean_spacing(soup_text.get_text(separator=' ', strip=True))
 
 print(f"Enhanced {va_count} VA questions across all years.")
 
-# Save back to json and js
 with open('data/cat_pyqs.json', 'w', encoding='utf-8') as f:
     json.dump(all_qs, f, ensure_ascii=False)
 

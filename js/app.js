@@ -843,6 +843,13 @@
       }
     });
 
+    // Image zoom in exam mode
+    container.querySelectorAll('img').forEach(img => {
+      img.addEventListener('click', () => {
+        openImageModal(img.src);
+      });
+    });
+
     renderExamPalette();
     renderMathJax();
   }
@@ -988,6 +995,16 @@
 
   // --- EVENT LISTENERS ---
   function setupEventListeners() {
+    // Global fallback for any image that fails to load locally
+    window.addEventListener('error', function (e) {
+      if (e.target && e.target.tagName === 'IMG' && e.target.dataset && e.target.dataset.remoteSrc) {
+        if (e.target.src !== e.target.dataset.remoteSrc) {
+          console.warn('Image failed locally, falling back to remote URL:', e.target.dataset.remoteSrc);
+          e.target.src = e.target.dataset.remoteSrc;
+        }
+      }
+    }, true);
+
     // Theme Toggle
     if (el.themeBtn) el.themeBtn.addEventListener('click', toggleTheme);
 
