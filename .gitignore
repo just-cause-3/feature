@@ -1,0 +1,17 @@
+# Python & Scraper cache
+__pycache__/
+*.pyc
+raw_html/
+data/explanations_cache.json
+
+# Scratch / Temporary files
+sample.html
+varc_*.html
+dilr_*.html
+*.tmp
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
