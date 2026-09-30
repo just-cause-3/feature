@@ -576,6 +576,139 @@ body {
   overflow: hidden;
 }
 
+/* ==========================================================================
+   SPLIT-PANEL LAYOUT (CAT Exam Style)
+   Left: Passage + Question | Right: Options + Controls
+   ========================================================================== */
+.card-split-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .card-split-panel {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+
+/* Left Panel — Question Content */
+.card-panel-left {
+  min-width: 0; /* prevent overflow from long text */
+}
+
+@media (min-width: 1024px) {
+  .card-panel-left {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 0.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-medium) transparent;
+  }
+  .card-panel-left::-webkit-scrollbar {
+    width: 5px;
+  }
+  .card-panel-left::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .card-panel-left::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: var(--radius-full);
+  }
+}
+
+/* Right Panel — Answer / Options */
+.card-panel-right {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .card-panel-right {
+    position: sticky;
+    top: 5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-medium) transparent;
+  }
+  .card-panel-right::-webkit-scrollbar {
+    width: 5px;
+  }
+  .card-panel-right::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .card-panel-right::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: var(--radius-full);
+  }
+}
+
+/* Panel Right Header */
+.panel-right-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.panel-right-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* Result Chips */
+.result-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.result-chip.result-correct {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.result-chip.result-wrong {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.result-chip.result-pending {
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Divider between left and right panels on desktop */
+@media (min-width: 1024px) {
+  .card-panel-right {
+    border-left: 2px solid var(--border-subtle);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+}
+
 .question-card:hover {
   border-color: var(--border-medium);
   box-shadow: var(--shadow-lg);
@@ -929,13 +1062,6 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .options-grid.two-col {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 .option-item {
@@ -943,7 +1069,7 @@ body {
   align-items: flex-start;
   gap: 0.85rem;
   padding: 0.85rem 1.15rem;
-  background: var(--bg-surface);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -1026,11 +1152,10 @@ body {
 
 /* TITA Input Box */
 .tita-box {
-  background: var(--bg-surface);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1.15rem;
-  margin-bottom: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;

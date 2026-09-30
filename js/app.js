@@ -280,7 +280,7 @@
       const secBadgeClass = q.section === 'QA' ? 'badge-qa' : q.section === 'DILR' ? 'badge-dilr' : 'badge-varc';
 
       html += `
-        <div class="question-card" id="q_card_${q.id}" data-id="${q.id}" data-sec="${q.section}">
+        <div class="question-card ${q.passageHtml ? 'has-passage' : ''}" id="q_card_${q.id}" data-id="${q.id}" data-sec="${q.section}">
           <!-- Card Header Bar -->
           <div class="card-header-bar">
             <div class="card-badges-left">
@@ -296,86 +296,90 @@
             </div>
           </div>
 
-          <!-- Passage / Case Container (if exists) -->
-          ${q.passageHtml ? `
-            <div class="passage-container">
-              <div class="passage-header">
-                <span class="passage-title">📖 Reading Passage / Case Set</span>
-              </div>
-              <div class="passage-body">
-                ${q.passageHtml}
-              </div>
-            </div>
-          ` : ''}
-
-          <!-- Question Body -->
-          <div class="question-statement">
-            ${q.questionHtml}
-          </div>
-
-          <!-- Options or TITA -->
-          ${q.type === 'MCQ' ? `
-            <div class="options-grid ${q.choices.length <= 4 && q.choices.every(c => c.text.length < 40) ? 'two-col' : ''}">
-              ${q.choices.map(c => {
-                let optClass = 'option-item';
-                if (resp.selected === c.key) optClass += ' selected';
-                if (resp.checked) {
-                  if (q.correctLetter === c.key) {
-                    optClass += ' is-correct';
-                  } else if (resp.selected === c.key) {
-                    optClass += ' is-wrong';
-                  }
-                }
-                return `
-                  <div class="${optClass}" data-key="${c.key}" data-qid="${q.id}">
-                    <div class="option-key">${c.key}</div>
-                    <div class="option-text">${c.html || c.text}</div>
+          <!-- Split Panel Layout -->
+          <div class="card-split-panel">
+            <!-- LEFT: Question Content -->
+            <div class="card-panel-left">
+              ${q.passageHtml ? `
+                <div class="passage-container">
+                  <div class="passage-header">
+                    <span class="passage-title">📖 Reading Passage / Case Set</span>
                   </div>
-                `;
-              }).join('')}
-            </div>
-          ` : `
-            <div class="tita-box">
-              <div class="tita-header">⌨️ Type In The Answer (TITA / Non-MCQ)</div>
-              <div class="tita-input-wrapper">
-                <input type="text" class="tita-input" id="tita_${q.id}" placeholder="Enter answer..." 
-                  value="${resp.selected || ''}" ${resp.checked ? 'disabled' : ''} />
+                  <div class="passage-body">
+                    ${q.passageHtml}
+                  </div>
+                </div>
+              ` : ''}
+
+              <div class="question-statement">
+                ${q.questionHtml}
               </div>
             </div>
-          `}
 
-          <!-- Footer Controls -->
-          <div class="card-footer-controls">
-            <div class="controls-left">
-              ${!resp.checked ? `
-                <button class="btn btn-primary" data-action="check" data-id="${q.id}">
-                  ✓ Check Answer
-                </button>
+            <!-- RIGHT: Options / Answer Panel -->
+            <div class="card-panel-right">
+              <div class="panel-right-header">
+                <span class="panel-right-label">📝 Answer Panel</span>
+                ${resp.checked ? (
+                  resp.isCorrect ? `
+                    <span class="result-chip result-correct">✓ Correct (+3)</span>
+                  ` : `
+                    <span class="result-chip result-wrong">✗ Incorrect (${q.type === 'MCQ' ? '-1' : '0'})</span>
+                  `
+                ) : `<span class="result-chip result-pending">Unanswered</span>`}
+              </div>
+
+              ${q.type === 'MCQ' ? `
+                <div class="options-grid">
+                  ${q.choices.map(c => {
+                    let optClass = 'option-item';
+                    if (resp.selected === c.key) optClass += ' selected';
+                    if (resp.checked) {
+                      if (q.correctLetter === c.key) {
+                        optClass += ' is-correct';
+                      } else if (resp.selected === c.key) {
+                        optClass += ' is-wrong';
+                      }
+                    }
+                    return `
+                      <div class="${optClass}" data-key="${c.key}" data-qid="${q.id}">
+                        <div class="option-key">${c.key}</div>
+                        <div class="option-text">${c.html || c.text}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               ` : `
-                <button class="btn btn-secondary" data-action="reset" data-id="${q.id}">
-                  ↺ Try Again
-                </button>
+                <div class="tita-box">
+                  <div class="tita-header">⌨️ Type In The Answer (TITA / Non-MCQ)</div>
+                  <div class="tita-input-wrapper">
+                    <input type="text" class="tita-input" id="tita_${q.id}" placeholder="Enter answer..." 
+                      value="${resp.selected || ''}" ${resp.checked ? 'disabled' : ''} />
+                  </div>
+                </div>
               `}
-              <button class="btn btn-outline-purple" data-action="toggle-exp" data-id="${q.id}">
-                💡 ${resp.checked ? 'Hide Solution' : 'View Explanation'}
-              </button>
-            </div>
-            <div class="controls-right">
-              ${resp.checked ? (
-                resp.isCorrect ? `
-                  <span class="correct-ans-callout" style="color:var(--success)">
-                    ✓ Correct (+3)
-                  </span>
-                ` : `
-                  <span class="correct-ans-callout" style="color:var(--danger)">
-                    ✗ Incorrect (${q.type === 'MCQ' ? '-1' : '0'})
-                  </span>
-                `
-              ) : ''}
+
+              <!-- Panel Controls -->
+              <div class="card-footer-controls">
+                <div class="controls-left">
+                  ${!resp.checked ? `
+                    <button class="btn btn-primary" data-action="check" data-id="${q.id}">
+                      ✓ Check Answer
+                    </button>
+                  ` : `
+                    <button class="btn btn-secondary" data-action="reset" data-id="${q.id}">
+                      ↺ Try Again
+                    </button>
+                  `}
+                  <button class="btn btn-outline-purple" data-action="toggle-exp" data-id="${q.id}">
+                    💡 ${resp.checked ? 'Hide Solution' : 'View Explanation'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Explanation Box (revealed when checked or toggled) -->
+          <!-- Explanation Box (full width below split) -->
           <div class="solution-box" id="sol_${q.id}" style="display: ${resp.showExp || resp.checked ? 'block' : 'none'};">
             <div class="solution-header">
               <div class="correct-ans-callout">
@@ -389,7 +393,6 @@
               ` : ''}
             </div>
 
-            <!-- Explanatory Text -->
             ${q.explanationHtml ? `
               <div class="solution-body">
                 ${q.explanationHtml}
@@ -400,7 +403,6 @@
               </div>
             `}
 
-            <!-- YouTube Video Solution Embed -->
             ${q.videoUrl ? `
               <div class="video-wrapper">
                 <iframe src="${q.videoUrl}" title="2IIM CAT Video Solution" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
