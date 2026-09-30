@@ -723,44 +723,205 @@ body {
 }
 
 .passage-body {
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: var(--text-secondary);
+  font-size: 1.02rem;
+  line-height: 1.8;
+  color: #cbd5e1;
   overflow-wrap: break-word;
+  letter-spacing: -0.01em;
+}
+
+[data-theme="light"] .passage-body {
+  color: #334155;
 }
 
 .passage-body p {
-  margin-bottom: 0.85rem;
+  margin-bottom: 1.15rem;
 }
 
 .passage-body img, .question-statement img {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-sm);
-  margin: 0.85rem 0;
+  margin: 1rem auto;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-subtle);
   background: #ffffff;
-  padding: 0.4rem;
+  padding: 0.5rem;
   cursor: zoom-in;
+  display: block;
   transition: transform 0.2s ease;
 }
 
 .passage-body img:hover, .question-statement img:hover {
-  transform: scale(1.01);
+  transform: scale(1.015);
 }
 
-/* Question Statement */
+.set-case-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Question Statement Typography */
 .question-statement {
   font-size: 1.05rem;
-  font-weight: 500;
-  line-height: 1.65;
+  font-weight: 450;
+  line-height: 1.75;
   color: var(--text-primary);
   margin-bottom: 1.25rem;
+  list-style: none;
+}
+
+.question-statement li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .question-statement p {
+  margin-bottom: 0.85rem;
+}
+
+/* Verbal Ability (VA) Specialized Component Styles */
+.va-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(139, 92, 246, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(139, 92, 246, 0.35);
   margin-bottom: 0.75rem;
+}
+
+.va-instruction {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.85rem !important;
+  line-height: 1.6;
+}
+
+.va-context-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-left: 3px solid #8b5cf6;
+  border-radius: var(--radius-md);
+  padding: 1.15rem 1.35rem;
+  margin: 0.85rem 0 1.25rem;
+  font-size: 1.02rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .va-context-box {
+  background: #f1f5f9;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.va-context-box p {
+  margin: 0;
+}
+
+.va-target-sentence {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  margin: 0.65rem 0 1rem;
+}
+
+.va-target-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fbbf24;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.va-target-sentence p {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.blank-chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  margin: 0 0.2rem;
+  border-radius: var(--radius-sm);
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #a5b4fc;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Para Jumble & Odd One Out Sentence Cards */
+.jumble-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.85rem 0 1.25rem;
+}
+
+.jumble-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  transition: var(--transition-fast);
+}
+
+.jumble-item:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: var(--bg-card-hover);
+  transform: translateX(2px);
+}
+
+.jumble-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+}
+
+.jumble-text {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  flex: 1;
 }
 
 /* MCQ Options */
@@ -827,10 +988,15 @@ body {
 }
 
 .option-text {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   color: var(--text-primary);
   flex: 1;
-  line-height: 1.5;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+.option-text p {
+  margin: 0;
 }
 
 /* Correct / Incorrect Feedback States */
